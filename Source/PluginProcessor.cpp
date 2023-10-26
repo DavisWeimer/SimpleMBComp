@@ -166,7 +166,8 @@ bool SimpleMBCompAudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* SimpleMBCompAudioProcessor::createEditor()
 {
-    return new SimpleMBCompAudioProcessorEditor (*this);
+//    return new SimpleMBCompAudioProcessorEditor (*this);
+    return new juce::GenericAudioProcessorEditor (*this);
 }
 
 //==============================================================================
@@ -183,6 +184,47 @@ void SimpleMBCompAudioProcessor::setStateInformation (const void* data, int size
     // whose contents will have been created by the getStateInformation() call.
 }
 
+juce::AudioProcessorValueTreeState::ParameterLayout SimpleMBCompAudioProcessor::createParameterLayout()
+{
+    APVTS::ParameterLayout layout;
+    
+    using namespace juce;
+    
+//  NormalisableRange<float>(-60 = min, 12 = max, 1 = Step Size, 1 = Skew (Distribution of steps))
+    layout.add(std::make_unique<AudioParameterFloat>(ParameterID{"Threshold", 1},
+                                                     "Threshold",
+                                                     NormalisableRange<float>(-60, 12, 1, 1),
+                                                     0));
+    
+//  NormalisableRange<float>(5 = ms, 500 = ms, 1 = range, 1 = skew,);
+    auto attackReleaseRange = NormalisableRange<float>(5, 500, 1, 1);
+    
+    layout.add(std::make_unique<AudioParameterFloat>(ParameterID{"Attack", 2},
+                                                     "Attack",
+                                                     attackReleaseRange,
+                                                     50));
+    
+    layout.add(std::make_unique<AudioParameterFloat>(ParameterID{"Release", 3},
+                                                     "Release",
+                                                     attackReleaseRange,
+                                                     250));
+//  Choices for Ratio
+    auto choices = std::vector<double>{ 1, 1.5, 2, 3, 4, 5, 6, 7, 8, 10, 15, 20, 50, 100 };
+    juce::StringArray sa;
+    for( auto choice : choices)
+    {
+//      Double option only displays 1 decimal point
+        sa.add (juce::String(choice, 1) );
+    }
+    
+//  Index position 3 select for default ratio
+    layout.add(std::make_unique<AudioParameterChoice>(ParameterID{"Ratio", 4},
+                                                      "Ratio",
+                                                      sa,
+                                                      3));
+    
+    return layout;
+}
 //==============================================================================
 // This creates new instances of the plugin..
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
